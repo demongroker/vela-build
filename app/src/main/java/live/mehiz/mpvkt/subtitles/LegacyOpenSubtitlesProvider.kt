@@ -22,7 +22,7 @@ class LegacyOpenSubtitlesProvider : SubtitleProvider {
         if (!SubtitleLogic.isSuccess(reply.status)) {
           return@withContext SubtitleSearchResult.Failure(SubtitleLogic.errorFor(reply.status))
         }
-        val hits = SubtitleLogic.rank(SubtitleLogic.parseHits(reply.text()))
+        val hits = SubtitleLogic.rank(SubtitleLogic.parseHits(reply.text()), candidate)
         if (hits.isNotEmpty()) return@withContext SubtitleSearchResult.Found(hits)
       }
       SubtitleSearchResult.Found(emptyList())

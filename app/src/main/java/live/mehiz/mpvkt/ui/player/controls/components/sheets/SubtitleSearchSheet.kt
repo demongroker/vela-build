@@ -79,7 +79,7 @@ fun SubtitleSearchSheet(
       is SubtitleSearchResult.Found -> result.hits
     }
     state = if (hits.isNullOrEmpty()) {
-      SubtitleSearchState.Failed(query, ProviderError.ProviderUnavailable)
+      SubtitleSearchState.NotFound(query)
     } else {
       SubtitleSearchState.Results(query, hits)
     }
@@ -112,6 +112,7 @@ fun SubtitleSearchSheet(
         is SubtitleSearchState.Searching -> BusyRow("Looking for “${current.query}”…")
         is SubtitleSearchState.Downloading -> BusyRow("Downloading ${current.fileName}…")
         is SubtitleSearchState.Failed -> FailedRow(providerErrorText(current.error)) { attempt++ }
+        is SubtitleSearchState.NotFound -> NotFoundRow(current.query)
         is SubtitleSearchState.Results -> ResultsList(current, ::pick)
       }
     }
@@ -136,6 +137,15 @@ private fun FailedRow(reason: String, onRetry: () -> Unit) {
     Text(reason, style = MaterialTheme.typography.bodyMedium)
     TextButton(onClick = onRetry) { Text("Try again") }
   }
+}
+
+@Composable
+private fun NotFoundRow(query: String) {
+  Text(
+    text = "No subtitles found for “$query”.",
+    style = MaterialTheme.typography.bodyMedium,
+    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+  )
 }
 
 @Composable

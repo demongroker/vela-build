@@ -32,6 +32,7 @@ import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.graphics.toAndroidRect
@@ -100,6 +101,14 @@ class PlayerActivity : AppCompatActivity() {
   /** The folder queue, handed over by the library so next/shuffle/delete work here. */
   private var queue: PlaybackQueue? = null
 
+  /**
+   * Bumped whenever the queue or current file changes, so the Compose UI recomputes
+   * the Next/Previous button visibility. Without this, [queue] and [resumeFileKey]
+   * are plain fields and the buttons would keep whatever value was computed at the
+   * first composition.
+   */
+  private val queueVersion = mutableStateOf(0L)
+
   /** Volume is restored once per session, not on every resume. */
   private var volumeRestored = false
 
@@ -108,6 +117,13 @@ class PlayerActivity : AppCompatActivity() {
 
   /** Incremented on every load attempt and on FILE_LOADED, so the timeout can tell. */
   private var loadToken = 0
+
+  /**
+   * True from the moment an in-place switch (Next/Previous) calls `playFile` until mpv
+   * reports END_FILE for the interrupted file. Suppresses the END_FILE auto-advance so
+   * a manual Next/Previous does not get treated as "the file never opened" and skipped.
+   */
+  private var switchingInPlace = false
 
   /** MediaStore shows its own confirmation; only RESULT_OK may delete anything. */
   private val deleteLauncher = registerForActivityResult(
@@ -170,6 +186,9 @@ class PlayerActivity : AppCompatActivity() {
     binding.controls.setContent {
       MpvKtTheme {
         val rotationMode by playerPreferences.rotationMode.collectAsState()
+        // Reading queueVersion makes hasNext/hasPrevious re-evaluate after every
+        // queue or current-file change, instead of freezing at the first render.
+        queueVersion.value
         PlayerControls(
           viewModel = viewModel,
           onBackPress = ::finish,
@@ -629,6 +648,7 @@ class PlayerActivity : AppCompatActivity() {
     if (player.isExiting) return
     when (eventId) {
       MPVLib.mpvEventId.MPV_EVENT_FILE_LOADED -> {
+        switchingInPlace = false
         loadToken++
         Log.d(PAUSE_TAG, "file loaded pause=${MPVLib.getPropertyBoolean("pause")}")
         fileName = getFileName(intent)
@@ -646,6 +666,13 @@ class PlayerActivity : AppCompatActivity() {
       }
 
       MPVLib.mpvEventId.MPV_EVENT_END_FILE -> {
+        if (switchingInPlace) {
+          // This END_FILE is the old file being interrupted by our own Next/Previous
+          // switch, not a natural end. Do not auto-advance (it would skip the file we
+          // just chose). FILE_LOADED for the new file follows and clears nothing further.
+          switchingInPlace = false
+          return
+        }
         val eof = MPVLib.getPropertyBoolean("eof-reached") == true
         val idle = MPVLib.getPropertyBoolean("idle-active") == true
         val position = queue?.items?.indexOfFirst { it.fileKey == resumeFileKey } ?: -1
@@ -790,11 +817,13 @@ class PlayerActivity : AppCompatActivity() {
     intent.putExtra(EXTRA_MEDIA_PATH, item.path.ifBlank { uriString })
     queue?.let { intent.putExtra(EXTRA_QUEUE, it.toJson()) }
     resumeFileKey = session.fileKey
+    queueVersion.value++
     fileName = item.name
     // The new file starts from the top (its own saved position is applied on load).
     MPVLib.setPropertyInt("time-pos", 0)
 
     val token = ++loadToken
+    switchingInPlace = true
     player.playFile(playable)
     lifecycleScope.launch {
       delay(OPEN_TIMEOUT_MS)
@@ -854,6 +883,7 @@ class PlayerActivity : AppCompatActivity() {
         seed = libraryPreferences.shuffleSeed(folder).get(),
       ) ?: return@launch
       queue = rebuilt
+      queueVersion.value++
       Log.d(QUEUE_TAG, "rebuilt queue for folder=$folder items=${rebuilt.items.size}")
       val item = QueueAdvance.nextAfterEnd(
         queue = rebuilt,
@@ -888,6 +918,7 @@ class PlayerActivity : AppCompatActivity() {
       seeded.get()
     }
     queue = current.copy(shuffled = shuffled, seed = seed)
+    queueVersion.value++
     val folders = libraryPreferences.shuffledFolders.get()
     libraryPreferences.shuffledFolders.set(if (shuffled) folders + folder else folders - folder)
   }
@@ -946,6 +977,7 @@ class PlayerActivity : AppCompatActivity() {
   private fun onFileDeleted() {
     val key = resumeFileKey
     queue = LibraryDeletion.pruneQueue(queue, key)
+    queueVersion.value++
     if (key.isNotBlank()) {
       lifecycleScope.launch(Dispatchers.IO) { resumeRepository.clear(key) }
     }

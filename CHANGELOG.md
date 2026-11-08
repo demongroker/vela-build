@@ -6,6 +6,30 @@ Newest first. Each entry describes one reviewable step.
 
 Nothing yet.
 
+### 0.1.24 — Next/Previous advance; subtitle search is relevant
+- **fix(player): manual Next/Previous no longer gets swallowed by auto-play.** With
+  "Play the next file automatically" on (the default), tapping Next called `playFile`,
+  which made mpv emit `END_FILE` for the file it was interrupting. The auto-advance
+  handler read that as "the file never opened" and skipped straight past the file the
+  owner had just chosen — so Next appeared to do nothing (or jump two files). An
+  `switchingInPlace` flag now suppresses auto-advance for the switch's own `END_FILE`.
+- **fix(player): the Next/Previous buttons now refresh as the queue changes.** Their
+  visibility was computed once at the first render and never re-evaluated, because
+  `queue` and `resumeFileKey` are plain fields rather than Compose state. After
+  advancing, deleting the current file, or toggling shuffle, the buttons could stay
+  hidden (or point at a stale position). A `queueVersion` counter now bumps on every
+  queue or current-file change and the controls re-read it.
+- **feat(subtitles): rank hits by how well they match the query.** `rank()` now scores
+  each hit by token overlap with the cleaned query before falling back to
+  format→rating→downloads, so a titled search surfaces the actual film instead of a
+  more-downloaded fuzzy match (the "One Piece 190" problem). Numeric-only queries are
+  non-discriminating and fall back to popularity.
+- **fix(subtitles): "no results" is no longer reported as a provider failure.** The
+  sheet now says "No subtitles found for <title>" when the provider answered fine but
+  had nothing, instead of "Couldn't reach the subtitle provider".
+
+
+
 ### 0.1.23 — half-size download on arm64 phones
 - **build: publish an arm64-only APK beside the universal one.** The release now ships
   `vela-<version>.apk` (universal, for any device) and `vela-<version>-arm64.apk` (arm64 only,

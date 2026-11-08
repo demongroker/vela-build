@@ -51,6 +51,9 @@ sealed interface SubtitleSearchState {
 
   data class Results(val query: String, val hits: List<SubtitleHit>) : SubtitleSearchState
 
+  /** The provider answered fine but had nothing for [query] — distinct from a failure. */
+  data class NotFound(val query: String) : SubtitleSearchState
+
   /** [error] is a [ProviderError]; the sheet turns it into a sentence. */
   data class Failed(val query: String, val error: ProviderError) : SubtitleSearchState
 

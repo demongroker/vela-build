@@ -154,10 +154,29 @@ object SubtitleLogic {
       lower.contains("quota") && lower.contains("exceed")
   }
 
-  /** Best first: real .srt files, then by rating, then by how many people downloaded them. */
-  fun rank(hits: List<SubtitleHit>): List<SubtitleHit> =
+  /** How many meaningful query words a hit's name shares. 0 when the query has none. */
+  fun relevance(hitFileName: String, query: String): Int {
+    val queryTokens = cleanName(query).lowercase().split(' ')
+      .filter { token ->
+        token.isNotBlank() && token.lowercase() !in QUALITY_TOKENS && !token.all(Char::isDigit)
+      }
+      .toSet()
+    if (queryTokens.isEmpty()) return 0
+    val hitTokens = cleanName(hitFileName).lowercase().split(' ')
+      .filter { it.isNotBlank() && it.lowercase() !in QUALITY_TOKENS }
+      .toSet()
+    return queryTokens.count { it in hitTokens }
+  }
+
+  /**
+   * Best first: how well the name matches the query, then real .srt files, then by
+   * rating, then by how many people downloaded them. With an empty query (or a
+   * numeric-only one) every hit scores 0 and the old ordering applies unchanged.
+   */
+  fun rank(hits: List<SubtitleHit>, query: String = ""): List<SubtitleHit> =
     hits.sortedWith(
-      compareByDescending<SubtitleHit> { it.format.equals(SRT, ignoreCase = true) }
+      compareByDescending<SubtitleHit> { relevance(it.fileName, query) }
+        .thenByDescending { it.format.equals(SRT, ignoreCase = true) }
         .thenByDescending { it.rating }
         .thenByDescending { it.downloads }
         .thenBy { it.fileName.lowercase() },

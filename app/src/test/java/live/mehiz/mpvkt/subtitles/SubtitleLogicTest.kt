@@ -128,4 +128,36 @@ class SubtitleLogicTest {
     assertEquals("Indonesian", SubtitleLogic.languageLabel("IND"))
     assertEquals("XXX", SubtitleLogic.languageLabel("xxx"))
   }
+
+  @Test
+  fun titleMatchingHitsRankAboveUnrelatedPopularOnes() {
+    val hits = listOf(
+      SubtitleHit("1", "Sex.and.Zen.III.1998.1080p.srt", "eng", "srt", 10, 5.0, SubtitleLogic.PROVIDER_LEGACY, "u1"),
+      SubtitleHit("2", "One.Piece.190.srt", "eng", "srt", 900_000, 9.0, SubtitleLogic.PROVIDER_LEGACY, "u2"),
+      SubtitleHit("3", "Naruto.190.srt", "eng", "srt", 500_000, 8.0, SubtitleLogic.PROVIDER_LEGACY, "u3"),
+    )
+    assertEquals(
+      listOf("Sex.and.Zen.III.1998.1080p.srt", "One.Piece.190.srt", "Naruto.190.srt"),
+      SubtitleLogic.rank(hits, "Sex and Zen III 1998").map { it.fileName },
+    )
+  }
+
+  @Test
+  fun numericQueryScoresEveryHitEquallySoPopularityDecides() {
+    val hits = listOf(
+      SubtitleHit("1", "One.Piece.190.srt", "eng", "srt", 900_000, 9.0, SubtitleLogic.PROVIDER_LEGACY, "u1"),
+      SubtitleHit("2", "Naruto.190.srt", "eng", "srt", 500_000, 8.0, SubtitleLogic.PROVIDER_LEGACY, "u2"),
+    )
+    assertEquals(
+      listOf("One.Piece.190.srt", "Naruto.190.srt"),
+      SubtitleLogic.rank(hits, "190").map { it.fileName },
+    )
+  }
+
+  @Test
+  fun relevanceIgnoresQualityAndNumericQueryTokens() {
+    assertEquals(4, SubtitleLogic.relevance("Sex.and.Zen.III.1998.1080p.srt", "Sex and Zen III 1998"))
+    assertEquals(0, SubtitleLogic.relevance("One.Piece.190.srt", "Sex and Zen III 1998"))
+    assertEquals(0, SubtitleLogic.relevance("One.Piece.190.srt", "190"))
+  }
 }

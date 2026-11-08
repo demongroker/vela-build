@@ -34,7 +34,7 @@ class OpenSubtitlesComProvider(
       if (!SubtitleLogic.isSuccess(reply.status)) {
         return@withContext SubtitleSearchResult.Failure(SubtitleLogic.errorFor(reply.status))
       }
-      SubtitleSearchResult.Found(SubtitleLogic.rank(SubtitleLogic.parseComHits(reply.text())))
+      SubtitleSearchResult.Found(SubtitleLogic.rank(SubtitleLogic.parseComHits(reply.text()), query))
     }
 
   override suspend fun download(hit: SubtitleHit): SubtitleFileResult = withContext(Dispatchers.IO) {
