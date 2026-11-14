@@ -6,6 +6,38 @@ Newest first. Each entry describes one reviewable step.
 
 Nothing yet.
 
+### 0.1.25 — update-integrity and background-playback fixes
+- **security(updater): a downloaded APK is only installed when its signing certificate
+  overlaps the installed app's.** `Updater.install()` now reads both signer sets
+  (`GET_SIGNING_CERTIFICATES`) and refuses on mismatch, on an empty signer set, and on a
+  zero-length file; the UI says why instead of opening an installer that cannot work.
+  `UpdateLogic.certsMatch()` is the pure, tested comparison; no certificate is hard-coded.
+- **fix(preferences): "Clear playback history" now clears it.** It used to launch a coroutine
+  that only fetched the DAO — no delete ran, so the rows came back and the toast lied.
+  `PlaybackHistoryCleaner` clears both `PlaybackStateEntity` and `resume_state` on IO, then
+  reports on the main thread.
+- **fix(playback): real foreground service.** Playback only called `notify()`, so Android
+  could kill the process in the background. It now calls `startForeground(...)` with
+  `FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK` while playing (plain notification when paused),
+  and the manifest declares `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK` and
+  `POST_NOTIFICATIONS`; the player asks for notification permission once on Android 13+.
+- **fix(updater): the universal APK is the default.** `pickApk`/`pickSha` no longer fall back
+  to an `-arm64` asset for a device that did not ask for one; the checksum always pairs with
+  the chosen APK.
+- **security(backup): the library lock and secure-secrets prefs are excluded** from cloud
+  backup and device-transfer (`lock_pin_hash`, `lock_pin_salt`, `lock_locked_folders`,
+  `vela_secure_secrets`).
+- **privacy(library): lock logs carry counts only** — folder names are no longer written to
+  logcat when a folder is locked or unlocked.
+- **security(files): `provider_paths.xml` narrowed** to the update-APK directory and the
+  crash-log file instead of every cache/files/external path.
+- **fix(player): crash-proofed intent and config handling** — null-safe `EXTRA_STREAM` /
+  `EXTRA_TEXT` and SAF tree lookups in the mpv.conf / input.conf save paths.
+- **Android 13+:** OpenSubtitles `User-Agent` now reports the real version from
+  `BuildConfig.VERSION_NAME`.
+- **Updates no longer start on mobile data by default:** the first tap on a metered
+  connection explains the cost, the second tap is the explicit consent.
+
 ### 0.1.24 — Next/Previous advance; subtitle search is relevant
 - **fix(player): manual Next/Previous no longer gets swallowed by auto-play.** With
   "Play the next file automatically" on (the default), tapping Next called `playFile`,

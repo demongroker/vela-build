@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<paths>
-    <cache-path
-        name="cache_files"
-        path="." />
-    <files-path
-        name="files_path"
-        path="." />
+<!--
+  FileProvider shares exactly two things:
+    1. the update APK the updater downloads into external-files/Download,
+    2. the crash log file in files/.
+  Previously every path in cache/, files/ and external-files/ was readable by whatever app
+  received a share, which handed out far more than the updater and the crash reporter need.
+-->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
     <external-files-path
-        name="external_files"
-        path="." />
+        name="update_apk"
+        path="Download/" />
+    <files-path
+        name="crash_log"
+        path="crash.log" />
 </paths>

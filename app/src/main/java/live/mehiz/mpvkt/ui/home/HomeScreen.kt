@@ -75,6 +75,8 @@ private fun UpdateCard(
 ) {
   val scope = rememberCoroutineScope()
   var downloading by remember { mutableStateOf(false) }
+  // Set by the first tap on mobile data; the second tap is the consent to spend the data.
+  var confirmMetered by remember { mutableStateOf(false) }
   var checking by remember { mutableStateOf(false) }
   val apk = Updater.downloadedFile(context, release)
   val hasFile = apk.exists() && apk.length() > 0
@@ -103,10 +105,26 @@ private fun UpdateCard(
           Button(
             enabled = !downloading,
             onClick = {
-              downloading = Updater.startDownload(context, release) != null
+              // Mobile data never starts the download by itself: the first tap explains the
+              // cost and the second tap is the explicit consent.
+              if (!Updater.isUnmetered(context) && !confirmMetered) {
+                confirmMetered = true
+                Toast.makeText(
+                  context,
+                  "You're on mobile data — tap Download again to use it",
+                  Toast.LENGTH_LONG,
+                ).show()
+                return@Button
+              }
+              downloading = Updater.startDownload(context, release, allowMetered = confirmMetered) != null
+              confirmMetered = false
               Toast.makeText(
                 context,
-                "Downloading in background — it resumes if the connection drops",
+                if (downloading) {
+                  "Downloading in background — it resumes if the connection drops"
+                } else {
+                  "Update skipped — waiting for Wi-Fi"
+                },
                 Toast.LENGTH_LONG,
               ).show()
             },
@@ -119,7 +137,15 @@ private fun UpdateCard(
               scope.launch {
                 val verdict = Updater.verify(apk, release)
                 if (verdict == Updater.Verify.OK) {
-                  Updater.install(context, apk)
+                  // install() refuses on its own if the APK's signer does not match this
+                  // app's signer, so a crafted or foreign build never reaches the installer.
+                  if (!Updater.install(context, apk)) {
+                    Toast.makeText(
+                      context,
+                      "This update is not signed by Vela's key — refusing to install it",
+                      Toast.LENGTH_LONG,
+                    ).show()
+                  }
                 } else {
                   val why = when (verdict) {
                     Updater.Verify.TRUNCATED -> "Download was cut short — fetching it again"

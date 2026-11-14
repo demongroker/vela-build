@@ -45,6 +45,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import live.mehiz.mpvkt.R
 import live.mehiz.mpvkt.database.MpvKtDatabase
+import live.mehiz.mpvkt.database.PlaybackHistoryCleaner
 import live.mehiz.mpvkt.preferences.AdvancedPreferences
 import live.mehiz.mpvkt.preferences.preference.collectAsState
 import live.mehiz.mpvkt.presentation.Screen
@@ -146,8 +147,12 @@ object AdvancedPreferencesScreen : Screen {
             textToValue = {
               preferences.mpvConf.set(it)
               File(context.filesDir.path, "mpv.conf").writeText(it)
-              if (mpvConfStorageLocation.isNotBlank()) {
-                val tree = DocumentFile.fromTreeUri(context, mpvConfStorageLocation.toUri())!!
+              // SAF can return null for a tree that was revoked or unmounted since it was
+              // picked; the copy in filesDir above has already been written, so skip the
+              // external copy rather than crashing on the editor's OK button.
+              val tree = mpvConfStorageLocation.takeIf { it.isNotBlank() }
+                ?.let { runCatching { DocumentFile.fromTreeUri(context, it.toUri()) }.getOrNull() }
+              if (tree != null) {
                 val uri = if (tree.findFile("mpv.conf") == null) {
                   val conf = tree.createFile("text/plain", "mpv.conf")!!
                   conf.renameTo("mpv.conf")
@@ -195,8 +200,12 @@ object AdvancedPreferencesScreen : Screen {
             textToValue = {
               preferences.inputConf.set(it)
               File(context.filesDir.path, "input.conf").writeText(it)
-              if (mpvConfStorageLocation.isNotBlank()) {
-                val tree = DocumentFile.fromTreeUri(context, mpvConfStorageLocation.toUri())!!
+              // Same null-safety as mpv.conf: a revoked SAF tree returns null instead of a
+              // DocumentFile. (Note: this block still reads mpvConfStorageLocation — see the
+              // B8 report; left unchanged here on purpose.)
+              val tree = mpvConfStorageLocation.takeIf { it.isNotBlank() }
+                ?.let { runCatching { DocumentFile.fromTreeUri(context, it.toUri()) }.getOrNull() }
+              if (tree != null) {
                 val uri = if (tree.findFile("input.conf") == null) {
                   val conf = tree.createFile("text/plain", "input.conf")!!
                   conf.renameTo("input.conf")
@@ -246,13 +255,23 @@ object AdvancedPreferencesScreen : Screen {
               stringResource(R.string.pref_advanced_clear_playback_history_confirm_title),
               stringResource(R.string.pref_advanced_clear_playback_history_confirm_subtitle),
               onConfirm = {
-                scope.launch(Dispatchers.IO) { mpvKtDatabase.videoDataDao() }
+                // Actually delete the history, then report. This used to launch an empty
+                // coroutine that only fetched the DAO and deleted nothing, so the rows came
+                // straight back and the toast lied.
+                scope.launch(Dispatchers.IO) {
+                  PlaybackHistoryCleaner.clearAll(
+                    mpvKtDatabase.videoDataDao(),
+                    mpvKtDatabase.resumeStateDao(),
+                  )
+                  withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                      context,
+                      context.getString(R.string.pref_advanced_cleared_playback_history),
+                      Toast.LENGTH_SHORT,
+                    ).show()
+                  }
+                }
                 isConfirmDialogShown = false
-                Toast.makeText(
-                  context,
-                  context.getString(R.string.pref_advanced_cleared_playback_history),
-                  Toast.LENGTH_SHORT,
-                ).show()
               },
               onCancel = { isConfirmDialogShown = false },
             )

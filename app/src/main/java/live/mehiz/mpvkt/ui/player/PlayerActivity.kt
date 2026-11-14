@@ -126,6 +126,8 @@ class PlayerActivity : AppCompatActivity() {
   private var switchingInPlace = false
 
   /** MediaStore shows its own confirmation; only RESULT_OK may delete anything. */
+  private val reqPostNotifications = 4101
+
   private val deleteLauncher = registerForActivityResult(
     ActivityResultContracts.StartIntentSenderForResult(),
   ) { result ->
@@ -176,6 +178,15 @@ class PlayerActivity : AppCompatActivity() {
 
     setupMPV()
     setupAudio()
+    // Android 13+: the media notification is invisible (and the foreground service
+    // notification silently dropped) until POST_NOTIFICATIONS is granted. Ask once, here,
+    // because this is the screen that creates the notification.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+      checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
+      android.content.pm.PackageManager.PERMISSION_GRANTED
+    ) {
+      requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), reqPostNotifications)
+    }
     setupMediaSession()
     setupResumeKey(intent)
     setupQueue(intent)
@@ -566,7 +577,9 @@ class PlayerActivity : AppCompatActivity() {
       Intent.ACTION_VIEW -> intent.data?.resolveUri(this)
       Intent.ACTION_SEND -> {
         if (intent.hasExtra(Intent.EXTRA_STREAM)) {
-          intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)!!.resolveUri(this)
+          // A sender can attach an EXTRA_STREAM that will not deserialize (wrong type,
+          // or stripped by the system): fall through to EXTRA_TEXT instead of crashing.
+          intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)?.resolveUri(this)
         } else {
           intent.getStringExtra(Intent.EXTRA_TEXT)?.let {
             val uri = it.trim().toUri()
@@ -581,7 +594,9 @@ class PlayerActivity : AppCompatActivity() {
 
   private fun getFileName(intent: Intent): String {
     val uri = if (intent.type == "text/plain") {
-      intent.getStringExtra(Intent.EXTRA_TEXT)!!.toUri()
+      // No EXTRA_TEXT on a text/plain intent means there is no name to resolve; returning
+      // "" keeps every caller's null/blank handling intact instead of throwing.
+      intent.getStringExtra(Intent.EXTRA_TEXT)?.toUri()
     } else {
       (intent.data ?: intent.getParcelableExtra(Intent.EXTRA_STREAM))
     }

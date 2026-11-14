@@ -1,19 +1,24 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample data extraction rules file; uncomment and customize as necessary.
-   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
-   for details.
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Vela data-extraction policy (API 31+).
+
+  Same rule as backup_rules.xml: the library lock's PIN hash/salt, the locked-folder list and
+  the secure-secrets store are excluded from BOTH cloud backup and device-to-device transfer.
+  A PIN hash in a backup is an offline PIN crack; the folder list leaks what is private.
 -->
 <data-extraction-rules>
     <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
+        <exclude domain="sharedpref" path="lock_pin_hash.xml" />
+        <exclude domain="sharedpref" path="lock_pin_salt.xml" />
+        <exclude domain="sharedpref" path="lock_locked_folders.xml" />
+        <exclude domain="sharedpref" path="vela_secure_secrets.xml" />
+        <exclude domain="sharedpref" path="device.xml" />
     </cloud-backup>
-    <!--
     <device-transfer>
-        <include .../>
-        <exclude .../>
+        <exclude domain="sharedpref" path="lock_pin_hash.xml" />
+        <exclude domain="sharedpref" path="lock_pin_salt.xml" />
+        <exclude domain="sharedpref" path="lock_locked_folders.xml" />
+        <exclude domain="sharedpref" path="vela_secure_secrets.xml" />
+        <exclude domain="sharedpref" path="device.xml" />
     </device-transfer>
-    -->
 </data-extraction-rules>

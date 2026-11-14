@@ -25,8 +25,10 @@ class LibraryLockTest {
     val a = LibraryLock.hash("4729", salt)
     val b = LibraryLock.hash("4729", salt)
     assertEquals(a, b)
-    assertEquals(64, a.length)
-    assertTrue(LibraryLock.looksLikeHash(a))
+    // The stored value is "<prf>:<64 hex>": sha256: adds 7 chars, sha1: adds 5. The
+    // digest itself is still 64 hex characters.
+    assertEquals(64, a.substringAfter(':').length)
+    assertTrue("must be a recognised stored-hash shape", LibraryLock.looksLikeHash(a))
   }
 
   @Test
@@ -111,5 +113,33 @@ class LibraryLockTest {
     val flipped = a.dropLast(1) + if (a.last() == '0') '1' else '0'
     assertFalse(LibraryLock.hashEquals(a, flipped))
     assertFalse(LibraryLock.hashEquals(a, "short"))
+  }
+
+  @Test
+  fun hashCarriesThePrfPrefixAndVerifies() {
+    val salt = LibraryLock.newSalt()
+    val hash = LibraryLock.hash("4729", salt)
+    assertTrue("hash must be prefixed so verify knows the PRF: $hash",
+      hash.startsWith("sha256:") || hash.startsWith("sha1:"))
+    assertTrue(LibraryLock.verify("4729", salt, hash))
+    assertFalse(LibraryLock.verify("4728", salt, hash))
+  }
+
+  @Test
+  fun legacyPrefixlessHexStillVerifiesAsSha256() {
+    val salt = LibraryLock.newSalt()
+    val prefixed = LibraryLock.hash("4729", salt)
+    // What every hash stored before the prefix existed looks like.
+    val legacy = prefixed.substringAfter(':')
+    assertEquals("sha256:", prefixed.substringBefore(':') + ":")
+    assertTrue(LibraryLock.verify("4729", salt, legacy))
+    assertFalse(LibraryLock.verify("4728", salt, legacy))
+  }
+
+  @Test
+  fun aPrefixedHashIsRecognisedAsAHash() {
+    val salt = LibraryLock.newSalt()
+    assertTrue(LibraryLock.looksLikeHash(LibraryLock.hash("4729", salt)))
+    assertFalse(LibraryLock.looksLikeHash("4729"))
   }
 }

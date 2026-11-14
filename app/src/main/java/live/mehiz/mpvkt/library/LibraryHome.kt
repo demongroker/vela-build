@@ -284,7 +284,7 @@ fun LibraryHome(
             onLock = {
               if (lockPreferences.hasPin()) {
                 lockPreferences.lockedFolders.set(lockedFolders + folder.name)
-                Log.d(LOCK_TAG, "locked ${folder.name}; total=${lockPreferences.lockedFolders.get().size}")
+                Log.d(LOCK_TAG, "locked a folder; total=${lockPreferences.lockedFolders.get().size}")
                 scope.launch { refreshExclusions() }
               } else {
                 pendingLockFolder = folder.name
@@ -428,7 +428,7 @@ fun LibraryHome(
       lockedFolders = lockedFolders,
       onRemove = { folder ->
         lockPreferences.lockedFolders.set(lockedFolders - folder)
-        Log.d(LOCK_TAG, "unlocked folder $folder by removal; left=${lockPreferences.lockedFolders.get().size}")
+        Log.d(LOCK_TAG, "unlocked a folder by removal; left=${lockPreferences.lockedFolders.get().size}")
         scope.launch { refreshExclusions() }
       },
       onDismiss = { showLockManager = false },

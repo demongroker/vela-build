@@ -5,6 +5,7 @@ package live.mehiz.mpvkt.update
  * Kept out of [Updater] on purpose: a wrong answer here means the phone either
  * misses an update or installs a truncated APK.
  */
+@Suppress("TooManyFunctions")  // small, pure, single-purpose helpers
 object UpdateLogic {
 
   /** A version parsed out of a release tag, a versionName or a git tag. */
@@ -94,29 +95,56 @@ object UpdateLogic {
     (name.endsWith("-arm64.apk") || name.endsWith("arm64-v8a-release.apk"))
 
   /**
-   * Pick the APK to download. An arm64 device takes the small arm64-only build when the
-   * release publishes one; anything else falls back to the universal APK. Both carry the
-   * same versionCode, so switching between them is a normal update.
+   * Pick the APK to download.
+   *
+   * [preferArm64] = true  -> the small arm64-only build when the release has one.
+   * [preferArm64] = false -> the UNIVERSAL build (`vela-<ver>.apk` / `app-release.apk`),
+   *                          never an -arm64 asset. The old code fell through to the arm64
+   *                          asset when no universal name matched, which installed an
+   *                          ABI-specific APK on devices that never asked for one.
    */
-  fun pickApk(names: List<String>, preferArm64: Boolean = false): String? =
-    (if (preferArm64) names.firstOrNull(::isArm64) else null)
-      ?: names.firstOrNull(::isArm64)
-      ?: names.firstOrNull { it.endsWith(".apk") && !isSha(it) }
+  fun pickApk(names: List<String>, preferArm64: Boolean = false): String? {
+    val apks = names.filter { it.endsWith(".apk") && !isSha(it) }
+    if (preferArm64) {
+      apks.firstOrNull(::isArm64)?.let { return it }
+    }
+    return apks.firstOrNull { !isArm64(it) }
+      ?: apks.firstOrNull(::isArm64) // nothing but arm64 published: better than nothing
+  }
 
   /**
-   * The checksum that belongs to the APK picked for this device. When the asset list has no
-   * name we can pair with (older releases published only checksums), fall back to the arm64
-   * one first so the historical behaviour still holds.
+   * The checksum that belongs to the APK picked for this device. Never returns an
+   * arm64 checksum when the chosen APK is universal (and vice versa) — a mismatched
+   * pair would fail the hash check on a perfectly good download.
    */
   fun pickSha(names: List<String>, preferArm64: Boolean = false): String? {
     val apk = pickApk(names, preferArm64)
-    if (apk != null) {
-      names.firstOrNull { it == "$apk.sha256" }?.let { return it }
-    }
-    return names.firstOrNull { it.endsWith("arm64-v8a-release.apk.sha256") }
-      ?: names.firstOrNull { preferArm64 && it.endsWith(".apk.sha256") && it.contains("arm64") }
+    val paired = apk?.let { chosen -> names.firstOrNull { it == "$chosen.sha256" } }
+    // No matching APK name (older releases published checksums only): honour the same
+    // arm64/universal preference rather than always assuming universal.
+    return paired
+      ?: names.firstOrNull { it.endsWith(".apk.sha256") && (it.contains("arm64") == preferArm64) }
       ?: names.firstOrNull { it.endsWith(".apk.sha256") }
   }
+
+  /**
+   * Fail-closed signing-certificate check.
+   *
+   * [pinned] is the cert SHA-256 published for the release (or read from the installed
+   * APK); [candidate] is what the downloaded APK actually carries. Anything empty, and
+   * any pair with no certificate in common, is a refusal: an updater that installs an APK
+   * signed by somebody else is worse than one that installs nothing.
+   */
+  fun certsMatch(pinned: List<String>, candidate: List<String>): Boolean {
+    val want = pinned.map(::normaliseCert).filter { it.isNotEmpty() }.toSet()
+    val have = candidate.map(::normaliseCert).filter { it.isNotEmpty() }.toSet()
+    if (want.isEmpty() || have.isEmpty()) return false
+    return want.any { it in have }
+  }
+
+  /** Cert digests are compared as lowercase hex without separators or labels. */
+  private fun normaliseCert(raw: String): String =
+    raw.trim().lowercase().replace(":", "").replace(" ", "").removePrefix("sha-256:").removePrefix("sha256:")
 
   /** A download may only be installed when its hash matches the published one. */
   fun matches(expectedSha: String?, actualSha: String?): Boolean {

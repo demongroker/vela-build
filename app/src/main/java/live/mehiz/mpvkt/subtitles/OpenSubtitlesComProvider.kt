@@ -100,6 +100,10 @@ class OpenSubtitlesComProvider(
 
   private companion object {
     const val API = "https://api.opensubtitles.com/api/v1"
-    const val USER_AGENT = "Vela v0.1.11"
+    /**
+     * BuildConfig.VERSION_NAME keeps this honest: upstream APIs see the version that is
+     * actually running instead of a literal that goes stale every release.
+     */
+    val USER_AGENT = "Vela v${live.mehiz.mpvkt.BuildConfig.VERSION_NAME}"
   }
 }

@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.media.AudioAttributes
@@ -431,8 +432,32 @@ class MediaPlaybackService : MediaBrowserServiceCompat(), MPVLib.EventObserver {
   }
 
   private fun updateNotification() {
+    val notification = createNotification()
     val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-    notificationManager.notify(NOTIFICATION_ID, createNotification())
+    if (paused == true) {
+      // Paused: a plain, dismissible notification. The service stays alive so playback can
+      // resume instantly, but it does not need foreground priority to sit idle.
+      notificationManager.notify(NOTIFICATION_ID, notification)
+      return
+    }
+    // Playing: a REAL foreground service. notify() alone is not enough — Android kills the
+    // process when the app goes to the background, and on Android 14 a mediaPlayback
+    // foreground service additionally needs the type-specific permission (declared in the
+    // manifest) or startForeground throws.
+    try {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        startForeground(
+          NOTIFICATION_ID,
+          notification,
+          ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK,
+        )
+      } else {
+        startForeground(NOTIFICATION_ID, notification)
+      }
+    } catch (e: Exception) {
+      Log.e(TAG, "startForeground failed — falling back to a plain notification", e)
+      notificationManager.notify(NOTIFICATION_ID, notification)
+    }
   }
 
   override fun onDestroy() {

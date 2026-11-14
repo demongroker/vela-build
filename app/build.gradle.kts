@@ -21,8 +21,8 @@ android {
     applicationId = "app.vela.player"
     minSdk = 21
     targetSdk = 36
-    versionCode = 361
-    versionName = "0.1.24"
+    versionCode = 362
+    versionName = "0.1.25"
 
     vectorDrawables {
       useSupportLibrary = true
@@ -174,7 +174,6 @@ dependencies {
   ksp(libs.room.compiler)
   implementation(libs.room.ktx)
 
-  implementation(libs.detekt.gradle.plugin)
   detektPlugins(libs.detekt.rules.compose)
   detektPlugins(libs.detekt.formatter)
 

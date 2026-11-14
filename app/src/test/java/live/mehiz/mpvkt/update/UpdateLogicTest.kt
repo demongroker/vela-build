@@ -135,17 +135,21 @@ class UpdateLogicTest {
   }
 
   @Test
-  fun arm64AssetIsPreferred() {
+  fun theUniversalAssetIsTheDefault() {
     val names = listOf("app-release.apk.sha256", "app-release.apk", "app-arm64-v8a-release.apk")
-    assertEquals("app-arm64-v8a-release.apk", UpdateLogic.pickApk(names))
+    // DEFAULT IS UNIVERSAL. Picking the arm64 asset for a device that never asked for
+    // one is what this test used to enforce, and it was wrong.
+    assertEquals("app-release.apk", UpdateLogic.pickApk(names))
+    assertEquals("app-arm64-v8a-release.apk", UpdateLogic.pickApk(names, preferArm64 = true))
     assertEquals("app-release.apk", UpdateLogic.pickApk(listOf("app-release.apk", "app-release.apk.sha256")))
     assertNull(UpdateLogic.pickApk(listOf("app-release.apk.sha256")))
   }
 
   @Test
-  fun shaAssetPrefersArm64AndParsesHashFileFormat() {
+  fun shaAssetPairsWithTheUniversalApkAndParsesHashFileFormat() {
     val names = listOf("app-release.apk.sha256", "app-arm64-v8a-release.apk.sha256")
-    assertEquals("app-arm64-v8a-release.apk.sha256", UpdateLogic.pickSha(names))
+    assertEquals("app-release.apk.sha256", UpdateLogic.pickSha(names))
+    assertEquals("app-arm64-v8a-release.apk.sha256", UpdateLogic.pickSha(names, preferArm64 = true))
     // `sha256sum` output is "<hash>  <file>"
     assertTrue(UpdateLogic.matches("ABC123  app-release.apk", "abc123"))
   }
@@ -198,5 +202,43 @@ class UpdateLogicTest {
   fun checksumsAreNeverMistakenForAnApk() {
     val chosen = UpdateLogic.pickApk(assets, preferArm64 = false)
     assertTrue(chosen == null || !chosen.endsWith(".sha256"))
+  }
+
+  @Test
+  fun aMixedReleaseNeverPicksArm64ByDefault() {
+    // Shaped like the 0.1.23 release: universal + arm64, each with a checksum.
+    val names = listOf(
+      "vela-0.1.23.apk",
+      "vela-0.1.23.apk.sha256",
+      "vela-0.1.23-arm64.apk",
+      "vela-0.1.23-arm64.apk.sha256",
+      "app-release.apk",
+      "app-arm64-v8a-release.apk",
+    )
+    assertEquals("vela-0.1.23.apk", UpdateLogic.pickApk(names, preferArm64 = false))
+    assertEquals("vela-0.1.23.apk.sha256", UpdateLogic.pickSha(names, preferArm64 = false))
+    assertEquals("vela-0.1.23-arm64.apk", UpdateLogic.pickApk(names, preferArm64 = true))
+    assertEquals("vela-0.1.23-arm64.apk.sha256", UpdateLogic.pickSha(names, preferArm64 = true))
+  }
+
+  @Test
+  fun arm64OnlyReleasesStillWorkOnArm64Devices() {
+    val armOnly = listOf("vela-0.1.23-arm64.apk", "vela-0.1.23-arm64.apk.sha256")
+    assertEquals("vela-0.1.23-arm64.apk", UpdateLogic.pickApk(armOnly, preferArm64 = true))
+    // Nothing universal published: falling back beats failing, on any device.
+    assertEquals("vela-0.1.23-arm64.apk", UpdateLogic.pickApk(armOnly, preferArm64 = false))
+  }
+
+  @Test
+  fun signingCertificateMustOverlap() {
+    val pinned = listOf("AA:BB:CC")
+    assertTrue(UpdateLogic.certsMatch(pinned, listOf("aabbcc")))
+    assertTrue(UpdateLogic.certsMatch(pinned, listOf("11:22", "AA:BB:CC")))
+    // Different signer: refused.
+    assertFalse(UpdateLogic.certsMatch(pinned, listOf("DD:EE:FF")))
+    // Empty or missing pins: refused (fail closed).
+    assertFalse(UpdateLogic.certsMatch(emptyList(), listOf("AA:BB:CC")))
+    assertFalse(UpdateLogic.certsMatch(pinned, emptyList()))
+    assertFalse(UpdateLogic.certsMatch(listOf(""), listOf("AA:BB:CC")))
   }
 }

@@ -1,13 +1,17 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample backup rules file; uncomment and customize as necessary.
-   See https://developer.android.com/guide/topics/data/autobackup
-   for details.
-   Note: This file is ignored for devices older that API 31
-   See https://developer.android.com/about/versions/12/backup-restore
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Vela backup policy (API 30 and below).
+
+  The library lock's PIN hash/salt, the locked-folder list and the secure-secrets store
+  must never leave the device in a cloud backup: a copied hash is an offline PIN crack, and
+  a copied folder list tells anyone reading the backup which folders are private.
+
+  Keep this file and data_extraction_rules.xml in step — Android 12+ reads the latter.
 -->
 <full-backup-content>
-    <!--
-   <include domain="sharedpref" path="."/>
-   <exclude domain="sharedpref" path="device.xml"/>
--->
+    <exclude domain="sharedpref" path="lock_pin_hash.xml" />
+    <exclude domain="sharedpref" path="lock_pin_salt.xml" />
+    <exclude domain="sharedpref" path="lock_locked_folders.xml" />
+    <exclude domain="sharedpref" path="vela_secure_secrets.xml" />
+    <exclude domain="sharedpref" path="device.xml" />
 </full-backup-content>

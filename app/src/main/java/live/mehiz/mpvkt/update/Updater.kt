@@ -3,6 +3,9 @@ package live.mehiz.mpvkt.update
 import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -109,7 +112,19 @@ object Updater {
   }
 
   /** Starts (or resumes) the download. Returns the DownloadManager id. */
-  fun startDownload(context: Context, release: GhRelease): Long? {
+  /**
+   * True when the current connection is unmetered (Wi-Fi/Ethernet/VPN), false on mobile
+   * data. Default policy: a ~70 MB update does not start itself on mobile data.
+   */
+  fun isUnmetered(context: Context): Boolean = runCatching {
+    val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    val caps = cm.getNetworkCapabilities(cm.activeNetwork) ?: return false
+    caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) && !cm.isActiveNetworkMetered
+  }.getOrDefault(false)
+
+  /** [allowMetered] is the user's explicit "use mobile data" tap, never a default. */
+  fun startDownload(context: Context, release: GhRelease, allowMetered: Boolean = false): Long? {
+    if (!allowMetered && !isUnmetered(context)) return null
     val asset = apkAsset(release) ?: return null
     val fileName = "vela-${release.tag}.apk"
     val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
@@ -147,14 +162,55 @@ object Updater {
     digest.digest().joinToString("") { "%02x".format(it) }
   }.getOrNull()
 
-  fun install(context: Context, file: File) {
+  /**
+   * Hand the downloaded APK to the system installer — but only if it is signed by the
+   * same key as the app doing the installing.
+   *
+   * Fail closed: an APK whose signer does not overlap with the installed package's signer
+   * is either a corrupted download or somebody else's build, and installing it would
+   * either fail at package-manager level or replace the app with foreign code. Returns
+   * false so the caller can say why instead of showing an installer that cannot work.
+   */
+  fun install(context: Context, file: File): Boolean {
+    val usable = file.exists() && file.length() > 0L &&
+      UpdateLogic.certsMatch(
+        signerDigests(context, context.packageName),
+        signerDigests(context, file.absolutePath),
+      )
+    if (!usable) return false
     val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
     val intent = Intent(Intent.ACTION_VIEW).apply {
       setDataAndType(uri, "application/vnd.android.package-archive")
       addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
     }
-    context.startActivity(intent)
+    return runCatching { context.startActivity(intent) }.isSuccess
   }
+
+  /**
+   * SHA-256 digests of an APK's signing certificates, lowercase hex.
+   *
+   * [packageOrPath] is a package name (the installed app) or an absolute APK path (the
+   * download). Empty list = "cannot tell", which [UpdateLogic.certsMatch] treats as a
+   * refusal.
+   */
+  @Suppress("DEPRECATION")
+  private fun signerDigests(context: Context, packageOrPath: String): List<String> = runCatching {
+    val pm = context.packageManager
+    val info = if (File(packageOrPath).isAbsolute) {
+      pm.getPackageArchiveInfo(packageOrPath, PackageManager.GET_SIGNING_CERTIFICATES)
+    } else {
+      pm.getPackageInfo(packageOrPath, PackageManager.GET_SIGNING_CERTIFICATES)
+    } ?: return emptyList()
+    val signers = info.signingInfo?.apkContentsSigners ?: return emptyList()
+    signers.map { certDigest(it.toByteArray()) }
+  }.getOrDefault(emptyList())
+
+  /**
+   * SHA-256 of a DER certificate, in the same normalised form [UpdateLogic.certsMatch]
+   * compares. Public for tests: this is the only place the digest format is decided.
+   */
+  fun certDigest(der: ByteArray): String =
+    MessageDigest.getInstance("SHA-256").digest(der).joinToString("") { "%02x".format(it) }
 }
 
 /** True when this device can install the small arm64-only build. */

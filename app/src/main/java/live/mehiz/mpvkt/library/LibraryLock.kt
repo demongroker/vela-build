@@ -11,6 +11,7 @@ import javax.crypto.spec.PBEKeySpec
  * The PIN is never stored: only a salted PBKDF2 hash. Verification compares in constant
  * time, and verification failures are indistinguishable from a wrong PIN by design.
  */
+@Suppress("TooManyFunctions")  // small, pure, single-purpose helpers
 object LibraryLock {
 
   /** Shortest PIN we accept. Four digits is the smallest that is still usable on a phone. */
@@ -21,8 +22,13 @@ object LibraryLock {
   const val ITERATIONS = 20_000
 
   /** Preferred first; the SHA1 variant is the fallback for API 21-25. */
-  private val ALGORITHMS = arrayOf("PBKDF2WithHmacSHA256", "PBKDF2WithHmacSHA1")
+  private val ALGORITHMS = listOf(
+    "PBKDF2WithHmacSHA256" to PREFIX_SHA256,
+    "PBKDF2WithHmacSHA1" to PREFIX_SHA1,
+  )
   private const val KEY_BITS = 256
+  private const val PREFIX_SHA256 = "sha256:"
+  private const val PREFIX_SHA1 = "sha1:"
 
   /** Digits only, reasonable length: a PIN, not a password. */
   fun isValidPin(pin: String): Boolean =
@@ -38,42 +44,63 @@ object LibraryLock {
   }
 
   /**
-   * Salted PBKDF2 hash of [pin], hex encoded. Empty pin or salt yields "".
-   * PBKDF2WithHmacSHA256 only exists on API 26+, so older devices use the SHA1 PRF
-   * instead of silently producing nothing. The algorithm used is written into the
-   * stored hash's prefix so verification always matches what created it.
+   * Salted PBKDF2 hash of [pin], hex encoded, **prefixed with the PRF that produced it**
+   * (`sha256:` or `sha1:`). Empty pin or salt yields "".
+   *
+   * PBKDF2WithHmacSHA256 only exists on API 26+, so older devices use the SHA1 PRF. The
+   * prefix is what makes verification match the algorithm that created the hash instead of
+   * silently comparing SHA1 output against a SHA256 expectation.
    */
   fun hash(pin: String, salt: String, iterations: Int = ITERATIONS): String {
     if (pin.isEmpty() || salt.isEmpty() || iterations <= 0) return ""
+    for ((algorithm, prefix) in ALGORITHMS) {
+      rawHash(pin, salt, iterations, algorithm)?.let { return prefix + it }
+    }
+    return ""
+  }
+
+  /** Hex digest from [algorithm], or null when the platform lacks that PRF. */
+  private fun rawHash(pin: String, salt: String, iterations: Int, algorithm: String): String? {
     val chars = pin.toCharArray()
-    try {
-      for (algorithm in ALGORITHMS) {
-        val spec = PBEKeySpec(chars, salt.toByteArray(Charsets.UTF_8), iterations, KEY_BITS)
-        try {
-          val factory = SecretKeyFactory.getInstance(algorithm)
-          return factory.generateSecret(spec).encoded.toHex()
-        } catch (e: java.security.NoSuchAlgorithmException) {
-          // try the next PRF
-        } finally {
-          spec.clearPassword()
-        }
-      }
-      return ""
+    val spec = PBEKeySpec(chars, salt.toByteArray(Charsets.UTF_8), iterations, KEY_BITS)
+    return try {
+      SecretKeyFactory.getInstance(algorithm).generateSecret(spec).encoded.toHex()
+    } catch (e: java.security.NoSuchAlgorithmException) {
+      null
     } finally {
+      spec.clearPassword()
       chars.fill('\u0000')
     }
   }
 
-  /** True when [pin] produces [expected] under [salt]. Constant-time comparison. */
+  /**
+   * True when [pin] produces [expected] under [salt]. Constant-time comparison.
+   *
+   * [expected] may be prefixed (`sha256:…` / `sha1:…`) or a legacy bare hex digest, which
+   * is treated as SHA-256 — that is what every stored hash created before the prefix was
+   * introduced is.
+   */
   fun verify(pin: String, salt: String, expected: String, iterations: Int = ITERATIONS): Boolean {
-    if (expected.isEmpty()) return false
-    val actual = hash(pin, salt, iterations)
-    if (actual.isEmpty() || actual.length != expected.length) return false
-    var diff = 0
-    for (i in actual.indices) {
-      diff = diff or (actual[i].code xor expected[i].code)
+    if (expected.isEmpty() || pin.isEmpty() || salt.isEmpty()) return false
+    val algorithm: String
+    val wantHex: String
+    when {
+      expected.startsWith(PREFIX_SHA256) -> {
+        algorithm = "PBKDF2WithHmacSHA256"
+        wantHex = expected.removePrefix(PREFIX_SHA256)
+      }
+      expected.startsWith(PREFIX_SHA1) -> {
+        algorithm = "PBKDF2WithHmacSHA1"
+        wantHex = expected.removePrefix(PREFIX_SHA1)
+      }
+      else -> {
+        algorithm = "PBKDF2WithHmacSHA256"
+        wantHex = expected
+      }
     }
-    return diff == 0
+    if (wantHex.isEmpty()) return false
+    val actual = rawHash(pin, salt, iterations, algorithm) ?: return false
+    return hashEquals(actual, wantHex)
   }
 
   /**
@@ -106,8 +133,10 @@ object LibraryLock {
   private val HEX = "0123456789abcdef".toCharArray()
 
   /** Exposed for the PIN screen: does this string look like a stored hash? */
-  fun looksLikeHash(value: String): Boolean =
-    value.length == KEY_BITS / 4 && value.all { it in '0'..'9' || it in 'a'..'f' }
+  fun looksLikeHash(value: String): Boolean {
+    val hex = value.removePrefix(PREFIX_SHA256).removePrefix(PREFIX_SHA1)
+    return hex.length == KEY_BITS / 4 && hex.all { it in '0'..'9' || it in 'a'..'f' }
+  }
 
   /** Constant-time compare used by tests and by any caller holding two hashes. */
   fun hashEquals(a: String, b: String): Boolean {
