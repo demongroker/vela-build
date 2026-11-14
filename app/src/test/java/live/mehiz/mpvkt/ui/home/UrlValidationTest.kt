@@ -18,7 +18,7 @@ class UrlValidationTest {
   @Test
   fun playableUrlsAreAccepted() {
     assertTrue(UrlValidation.isPlayable("https://example.com/video.mp4", protocols))
-    assertTrue(UrlValidation.isPlayable("http://192.168.0.10:8096/Videos/1/stream", protocols))
+    assertTrue(UrlValidation.isPlayable("http://example.invalid:8096/Videos/1/stream", protocols))
     assertTrue(UrlValidation.isPlayable("  https://example.com/a.mkv  ", protocols))
     assertFalse(UrlValidation.showError("https://example.com/video.mp4", protocols))
   }
