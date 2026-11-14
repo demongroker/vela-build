@@ -58,7 +58,7 @@ jobs:
           echo "apk-{}-sha256=$sha" >> $GITHUB_ENV'
 
       - name: Create release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ env.VERSION_TAG }}
           name: mpvKt ${{ env.VERSION_TAG }}
