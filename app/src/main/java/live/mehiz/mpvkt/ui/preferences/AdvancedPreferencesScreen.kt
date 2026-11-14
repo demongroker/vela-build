@@ -47,6 +47,7 @@ import live.mehiz.mpvkt.R
 import live.mehiz.mpvkt.database.MpvKtDatabase
 import live.mehiz.mpvkt.database.PlaybackHistoryCleaner
 import live.mehiz.mpvkt.preferences.AdvancedPreferences
+import live.mehiz.mpvkt.preferences.ConfStorage
 import live.mehiz.mpvkt.preferences.preference.collectAsState
 import live.mehiz.mpvkt.presentation.Screen
 import live.mehiz.mpvkt.presentation.components.ConfirmDialog
@@ -150,7 +151,12 @@ object AdvancedPreferencesScreen : Screen {
               // SAF can return null for a tree that was revoked or unmounted since it was
               // picked; the copy in filesDir above has already been written, so skip the
               // external copy rather than crashing on the editor's OK button.
-              val tree = mpvConfStorageLocation.takeIf { it.isNotBlank() }
+              val mpvConfTarget = ConfStorage.treeUriFor(
+                mpvConfUri = mpvConfStorageLocation,
+                inputConfUri = preferences.inputConfStorageUri.get(),
+                isInputConf = false,
+              )
+              val tree = mpvConfTarget.takeIf { it.isNotBlank() }
                 ?.let { runCatching { DocumentFile.fromTreeUri(context, it.toUri()) }.getOrNull() }
               if (tree != null) {
                 val uri = if (tree.findFile("mpv.conf") == null) {
@@ -200,10 +206,15 @@ object AdvancedPreferencesScreen : Screen {
             textToValue = {
               preferences.inputConf.set(it)
               File(context.filesDir.path, "input.conf").writeText(it)
-              // Same null-safety as mpv.conf: a revoked SAF tree returns null instead of a
-              // DocumentFile. (Note: this block still reads mpvConfStorageLocation — see the
-              // B8 report; left unchanged here on purpose.)
-              val tree = mpvConfStorageLocation.takeIf { it.isNotBlank() }
+              // input.conf has its own storage location; using the mpv.conf tree here wrote the
+              // file into the wrong folder. Blank = filesDir copy only.
+              val inputConfStorageLocation = ConfStorage.treeUriFor(
+                mpvConfUri = mpvConfStorageLocation,
+                inputConfUri = preferences.inputConfStorageUri.get(),
+                isInputConf = true,
+              )
+              // A revoked SAF tree returns null instead of a DocumentFile.
+              val tree = inputConfStorageLocation.takeIf { it.isNotBlank() }
                 ?.let { runCatching { DocumentFile.fromTreeUri(context, it.toUri()) }.getOrNull() }
               if (tree != null) {
                 val uri = if (tree.findFile("input.conf") == null) {

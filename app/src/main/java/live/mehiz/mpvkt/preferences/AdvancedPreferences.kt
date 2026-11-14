@@ -5,6 +5,8 @@ import live.mehiz.mpvkt.preferences.preference.PreferenceStore
 
 class AdvancedPreferences(preferenceStore: PreferenceStore) {
   val mpvConfStorageUri = preferenceStore.getString("mpv_conf_storage_location_uri")
+  /** Separate tree for input.conf; blank falls back to "filesDir only". */
+  val inputConfStorageUri = preferenceStore.getString("input_conf_storage_location_uri")
   val mpvConf = preferenceStore.getString("mpv.conf")
   val inputConf = preferenceStore.getString("input.conf")
 

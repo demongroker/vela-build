@@ -188,6 +188,10 @@ detekt {
   allRules = false
   buildUponDefaultConfig = true
   config.setFrom("$rootDir/config/detekt/detekt.yml")
+  // Accepts the pre-existing debt (158 weighted issues from before this change) so the build
+  // fails only on NEW findings. Regenerate with `./gradlew :app:detektBaseline` after
+  // consciously fixing or accepting a rule; never by hand.
+  baseline = file("detekt-baseline.xml")
 }
 
 tasks.withType<Detekt>().configureEach {
