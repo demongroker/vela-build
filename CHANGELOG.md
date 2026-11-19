@@ -6,6 +6,19 @@ Newest first. Each entry describes one reviewable step.
 
 Nothing yet.
 
+### 0.1.26 — toolchain refresh: Kotlin 2.4.21, minSdk 23
+- **build: minSdk 21 → 23.** androidx media 1.8.0 and koin 4.2.2 require API 23; all
+  owner devices are far above it. Drops Android 5.x support.
+- **build: jvmTarget migrated to the `kotlin.compilerOptions` DSL** — the old
+  `android.kotlinOptions` String form is an error under Kotlin 2.4.
+- **deps: Kotlin 2.2.20 → 2.4.21** (Compose compiler plugin follows the Kotlin version),
+  koin 4.1.1 → 4.2.2, androidx media 1.7.1 → 1.8.0, kotlinx-serialization 1.9.0 → 1.13.0,
+  compose-preference 2.1.0 → 2.2.0.
+- **ci: temurin distribution** (setup-java v5 removed `adopt`), checkout 7,
+  upload-artifact 7, setup-java 6; dependabot ignores AGP majors and navigation3 alphas
+  (both need deliberate migrations).
+- No behaviour changes intended; this release ships the audit fixes and merged bumps.
+
 ### 0.1.25 — update-integrity and background-playback fixes
 - **security(updater): a downloaded APK is only installed when its signing certificate
   overlaps the installed app's.** `Updater.install()` now reads both signer sets
