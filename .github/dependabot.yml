@@ -18,3 +18,5 @@ updates:
       # AGP 9.x needs a Gradle 9 migration - do it deliberately, not via bump PR
       - dependency-name: "com.android.application"
         update-types: ["version-update:semver-major"]
+      # navigation3 alphas chase preview compileSdk (37) - migrate deliberately
+      - dependency-name: "androidx.navigation3*"
