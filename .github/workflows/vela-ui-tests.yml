@@ -52,7 +52,7 @@ jobs:
           ls -la out
 
       - name: Upload APKs for the emulator job
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: vela-debug-apk
           path: out/*.apk
