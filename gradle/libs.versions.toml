@@ -8,7 +8,7 @@ room = "2.7.2"
 detekt = "1.23.8"
 about-libs = "12.2.4"
 navigation3 = "1.0.0-alpha06"
-kotlinx-serialization = "1.9.0"
+kotlinx-serialization = "1.13.0"
 
 [libraries]
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
