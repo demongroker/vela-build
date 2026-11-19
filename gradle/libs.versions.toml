@@ -41,7 +41,7 @@ koin-compose = { module = "io.insert-koin:koin-compose" }
 koin-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel" }
 koin-startup = { module = "io.insert-koin:koin-androidx-startup" }
 
-compose-prefs = { module = "me.zhanghai.compose.preference:preference", version = "2.1.0" }
+compose-prefs = { module = "me.zhanghai.compose.preference:preference", version = "2.2.0" }
 
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
