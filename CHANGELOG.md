@@ -2,6 +2,29 @@
 
 Newest first. Each entry describes one reviewable step.
 
+## 0.1.28
+
+### Settings regroup + one-thumb player sheet
+
+- **Settings hub: 9 flat entries → 4 grouped sections.** Playback (Player, Audio,
+  Subtitles, Decoder), Interface (Appearance, Custom buttons), Gestures, Advanced
+  (Advanced, About). Same screens, same keys, same behaviour — only the information
+  architecture changed (`SettingsGroups.kt`).
+- **Search across every preference.** A search entry at the top of the hub matches
+  titles and summaries of ~70 preferences across all screens (case-insensitive,
+  every word must match, title hits rank first). Tapping a result opens the screen
+  that contains it. Pure matching logic is unit-tested (`SettingsSearchTest`,
+  `SettingsGroupsTest`).
+- **One-thumb Quick controls sheet.** New bottom-left player button opens a sheet
+  with the daily controls in thumb reach: a fixed five-slot transport row
+  (previous / −10 s / play-pause / +10 s / next — missing queue neighbours disable
+  in place so play/pause never shifts), a grid of ≥56 dp labelled targets (speed,
+  aspect, subtitles, audio, decoder, more, lock), and persistent speed/aspect/
+  decoder indicator chips that double as shortcuts. Layout contract unit-tested
+  (`QuickControlsLayoutTest`); every icon button carries a TalkBack label.
+- The aspect cycle (Fit → Stretch → Crop) is now one shared `VideoAspect.next()`
+  used by both the bottom-right button and the sheet — behaviour unchanged.
+
 ## 0.1.27
 
 ### Navy + gold — the shared house style

@@ -90,7 +90,6 @@ import live.mehiz.mpvkt.ui.player.PlayerViewModel
 import live.mehiz.mpvkt.ui.player.CenterButtonIcon
 import live.mehiz.mpvkt.ui.player.RotationMode
 import live.mehiz.mpvkt.ui.player.Sheets
-import live.mehiz.mpvkt.ui.player.VideoAspect
 import live.mehiz.mpvkt.ui.player.controls.components.BrightnessSlider
 import live.mehiz.mpvkt.ui.player.controls.components.ControlsButton
 import live.mehiz.mpvkt.ui.player.controls.components.MultipleSpeedPlayerUpdate
@@ -143,6 +142,7 @@ fun PlayerControls(
   val duration by MPVLib.propInt["duration"].collectAsState()
   val position by MPVLib.propInt["time-pos"].collectAsState()
   val playbackSpeed by MPVLib.propFloat["speed"].collectAsState()
+  val aspectRatio by playerPreferences.videoAspect.collectAsState()
   val gestureSeekAmount by viewModel.gestureSeekAmount.collectAsState()
   val doubleTapSeekAmount by viewModel.doubleTapSeekAmount.collectAsState()
   val showDoubleTapOvals by playerPreferences.showDoubleTapOvals.collectAsState()
@@ -329,7 +329,6 @@ fun PlayerControls(
         }
         val holdForMultipleSpeed by playerPreferences.holdForMultipleSpeed.collectAsState()
         val currentPlayerUpdate by viewModel.playerUpdate.collectAsState()
-        val aspectRatio by playerPreferences.videoAspect.collectAsState()
         LaunchedEffect(currentPlayerUpdate, aspectRatio) {
           if (currentPlayerUpdate is PlayerUpdates.MultipleSpeed || currentPlayerUpdate is PlayerUpdates.None) {
             return@LaunchedEffect
@@ -619,13 +618,7 @@ fun PlayerControls(
               }
             },
             onAspectClick = {
-              viewModel.changeVideoAspect(
-                when (aspectRatio) {
-                  VideoAspect.Fit -> VideoAspect.Stretch
-                  VideoAspect.Stretch -> VideoAspect.Crop
-                  VideoAspect.Crop -> VideoAspect.Fit
-                },
-              )
+              viewModel.changeVideoAspect(aspectRatio.next())
             },
           )
         }
@@ -713,6 +706,17 @@ fun PlayerControls(
       sleepTimerTimeRemaining = sleepTimerTimeRemaining,
       onStartSleepTimer = viewModel::startTimer,
       buttons = customButtons.getButtons().toImmutableList(),
+      isPlaying = CenterButtonIcon.showPause(pauseConfirmedByMpv),
+      onPlayPause = viewModel::pauseUnpause,
+      onSeekRelative = { viewModel.seekRelative(it) },
+      hasPrevious = hasPrevious,
+      hasNext = hasNext,
+      onPlayPrevious = onPlayPrevious,
+      onPlayNext = onPlayNext,
+      aspect = aspectRatio,
+      onCycleAspect = { viewModel.changeVideoAspect(aspectRatio.next()) },
+      onLockControls = viewModel::lockControls,
+      onOpenSheet = onOpenSheet,
       onOpenPanel = onOpenPanel,
       onDeleteFile = onDeleteFile,
       onDismissRequest = { onOpenSheet(Sheets.None) },

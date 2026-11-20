@@ -19,6 +19,15 @@ object PlayerControlLabels {
   const val LOCK_ROTATION = "Lock rotation"
   const val SHUFFLE = "Shuffle queue"
 
+  const val QUICK_CONTROLS = "Quick controls"
+  const val PLAY_PAUSE = "Play or pause"
+  const val PLAYBACK_SPEED = "Playback speed"
+  const val SUBTITLE_TRACKS = "Subtitle tracks"
+  const val AUDIO_TRACKS = "Audio tracks"
+  const val DECODER = "Decoder"
+  const val MORE_OPTIONS = "More options"
+  const val LOCK_CONTROLS = "Lock controls"
+
   val all: List<String> = listOf(
     PICTURE_IN_PICTURE,
     VIDEO_ASPECT_RATIO,
@@ -29,5 +38,13 @@ object PlayerControlLabels {
     AUTO_ROTATE,
     LOCK_ROTATION,
     SHUFFLE,
+    QUICK_CONTROLS,
+    PLAY_PAUSE,
+    PLAYBACK_SPEED,
+    SUBTITLE_TRACKS,
+    AUDIO_TRACKS,
+    DECODER,
+    MORE_OPTIONS,
+    LOCK_CONTROLS,
   )
 }

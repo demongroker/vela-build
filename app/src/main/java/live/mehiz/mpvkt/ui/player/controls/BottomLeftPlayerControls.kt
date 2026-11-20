@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.ScreenRotation
+import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,6 +41,13 @@ fun BottomLeftPlayerControls(
     ControlsButton(
       icon = Icons.Default.ScreenRotation,
       onClick = onCycleRotation
+    )
+    // One-thumb entry point: the whole daily control set lives in the sheet,
+    // reachable from the bottom corner instead of the top-right cluster.
+    ControlsButton(
+      Icons.Default.TouchApp,
+      onClick = { onOpenSheet(Sheets.QuickControls) },
+      title = PlayerControlLabels.QUICK_CONTROLS,
     )
     ControlsButton(
       text = stringResource(R.string.player_speed, playbackSpeed),

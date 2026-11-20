@@ -20,6 +20,14 @@ enum class VideoAspect(@StringRes val titleRes: Int) {
   Crop(R.string.player_aspect_crop),
   Fit(R.string.player_aspect_fit),
   Stretch(R.string.player_aspect_stretch),
+  ;
+
+  /** The cycle the aspect button walks: Fit → Stretch → Crop → Fit. */
+  fun next(): VideoAspect = when (this) {
+    Fit -> Stretch
+    Stretch -> Crop
+    Crop -> Fit
+  }
 }
 
 enum class SingleActionGesture(@StringRes val titleRes: Int) {
@@ -68,6 +76,7 @@ enum class Sheets {
   Chapters,
   Decoders,
   More,
+  QuickControls,
 }
 
 enum class Panels {

@@ -15,11 +15,13 @@ import live.mehiz.mpvkt.ui.player.Decoder
 import live.mehiz.mpvkt.ui.player.Panels
 import live.mehiz.mpvkt.ui.player.Sheets
 import live.mehiz.mpvkt.ui.player.TrackNode
+import live.mehiz.mpvkt.ui.player.VideoAspect
 import live.mehiz.mpvkt.ui.player.controls.components.sheets.AudioTracksSheet
 import live.mehiz.mpvkt.ui.player.controls.components.sheets.ChaptersSheet
 import live.mehiz.mpvkt.ui.player.controls.components.sheets.DecodersSheet
 import live.mehiz.mpvkt.ui.player.controls.components.sheets.MoreSheet
 import live.mehiz.mpvkt.ui.player.controls.components.sheets.PlaybackSpeedSheet
+import live.mehiz.mpvkt.ui.player.controls.components.sheets.QuickControlsSheet
 import live.mehiz.mpvkt.ui.player.controls.components.sheets.SubtitleSearchSheet
 import live.mehiz.mpvkt.ui.player.controls.components.sheets.SubtitlesSheet
 
@@ -60,6 +62,19 @@ fun PlayerSheets(
   sleepTimerTimeRemaining: Int,
   onStartSleepTimer: (Int) -> Unit,
   buttons: ImmutableList<CustomButtonEntity>,
+
+  // Quick controls sheet
+  isPlaying: Boolean,
+  onPlayPause: () -> Unit,
+  onSeekRelative: (Int) -> Unit,
+  hasPrevious: Boolean,
+  hasNext: Boolean,
+  onPlayPrevious: () -> Unit,
+  onPlayNext: () -> Unit,
+  aspect: VideoAspect,
+  onCycleAspect: () -> Unit,
+  onLockControls: () -> Unit,
+  onOpenSheet: (Sheets) -> Unit,
 
   onOpenPanel: (Panels) -> Unit,
   onDeleteFile: () -> Unit = {},
@@ -150,6 +165,25 @@ fun PlayerSheets(
         onResetPresets = onResetSpeedPresets,
         onMakeDefault = onMakeDefaultSpeed,
         onResetDefault = onResetDefaultSpeed,
+        onDismissRequest = onDismissRequest,
+      )
+    }
+
+    Sheets.QuickControls -> {
+      QuickControlsSheet(
+        isPlaying = isPlaying,
+        onPlayPause = onPlayPause,
+        onSeekRelative = onSeekRelative,
+        hasPrevious = hasPrevious,
+        hasNext = hasNext,
+        onPlayPrevious = onPlayPrevious,
+        onPlayNext = onPlayNext,
+        speed = speed,
+        aspect = aspect,
+        decoder = decoder,
+        onCycleAspect = onCycleAspect,
+        onOpenSheet = onOpenSheet,
+        onLockControls = onLockControls,
         onDismissRequest = onDismissRequest,
       )
     }
