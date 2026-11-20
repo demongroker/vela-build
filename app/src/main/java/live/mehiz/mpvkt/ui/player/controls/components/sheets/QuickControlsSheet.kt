@@ -78,6 +78,7 @@ fun QuickControlsSheet(
     modifier,
   ) {
     BoxWithConstraints {
+      val sheetWidthDp = maxWidth.value.toInt()
       Column(
         modifier = Modifier
           .fillMaxWidth()
@@ -169,7 +170,7 @@ fun QuickControlsSheet(
             onLockControls,
           ),
         )
-        val columns = QuickControlsLayout.actionColumns(maxWidth.value.toInt())
+        val columns = QuickControlsLayout.actionColumns(sheetWidthDp)
         actions.chunked(columns).forEach { rowActions ->
           Row(modifier = Modifier.fillMaxWidth()) {
             rowActions.forEach { action ->
