@@ -57,6 +57,7 @@ import live.mehiz.mpvkt.preferences.preference.collectAsState
 import live.mehiz.mpvkt.presentation.Screen
 import live.mehiz.mpvkt.ui.player.PlayerActivity
 import live.mehiz.mpvkt.ui.preferences.PreferencesScreen
+import live.mehiz.mpvkt.ui.theme.cardBorder
 import live.mehiz.mpvkt.ui.update.ChangelogScreen
 import live.mehiz.mpvkt.ui.utils.LocalBackStack
 import live.mehiz.mpvkt.update.GhRelease
@@ -86,7 +87,7 @@ private fun UpdateCard(
     downloading = Updater.startDownload(context, release) != null
   }
 
-  Card(modifier = modifier.fillMaxWidth().padding(12.dp)) {
+  Card(modifier = modifier.fillMaxWidth().padding(12.dp), border = cardBorder) {
     Column(Modifier.padding(12.dp)) {
       Row(
         modifier = Modifier.fillMaxWidth(),

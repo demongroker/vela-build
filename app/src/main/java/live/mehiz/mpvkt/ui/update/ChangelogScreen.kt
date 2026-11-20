@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.serialization.Serializable
 import live.mehiz.mpvkt.presentation.Screen
+import live.mehiz.mpvkt.ui.theme.cardBorder
 import live.mehiz.mpvkt.ui.utils.LocalBackStack
 import live.mehiz.mpvkt.update.GhRelease
 import live.mehiz.mpvkt.update.Updater
@@ -75,7 +76,7 @@ object ChangelogScreen : Screen {
         verticalArrangement = Arrangement.spacedBy(10.dp),
       ) {
         items(releases) { release ->
-          Card(modifier = Modifier.fillMaxWidth()) {
+          Card(modifier = Modifier.fillMaxWidth(), border = cardBorder) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
               Text(release.tag, style = MaterialTheme.typography.titleMedium)
               Text(

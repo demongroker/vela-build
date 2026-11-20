@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.tooling.preview.Preview
+import live.mehiz.mpvkt.ui.theme.cardBorder
 import live.mehiz.mpvkt.ui.theme.spacing
 
 @SuppressLint("UnrememberedMutableState")
@@ -40,7 +41,7 @@ fun ExpandableCard(
   modifier: Modifier = Modifier,
   colors: CardColors = CardDefaults.cardColors(),
   shape: Shape = CardDefaults.shape,
-  border: BorderStroke? = null,
+  border: BorderStroke? = cardBorder,
   elevation: CardElevation = CardDefaults.cardElevation(),
   content: @Composable () -> Unit,
 ) {

@@ -2,6 +2,7 @@ package live.mehiz.mpvkt.ui.theme
 
 import android.os.Build
 import androidx.annotation.StringRes
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material.ripple.RippleAlpha
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -15,10 +16,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import live.mehiz.mpvkt.R
 import live.mehiz.mpvkt.preferences.AppearancePreferences
 import live.mehiz.mpvkt.preferences.preference.collectAsState
 import org.koin.compose.koinInject
+
+/**
+ * 1 dp edge on every card. Dark = outlineDark `#2A3A57`; light = outlineLight `#C7CFDB`.
+ * The fill step alone is only 1.44:1 against backgroundDark, so the hairline is what makes a
+ * card read as a panel on an AMOLED screen.
+ */
+val cardBorder: BorderStroke
+  @Composable get() = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
 
 private val lightScheme = lightColorScheme(
   primary = primaryLight,

@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.Color
 // Token names are unchanged so Theme.kt needs no edit; values come from
 // ~/.hermes/plans/design-tokens-navy-gold.md. Gold never carries text on a light
 // surface: primaryLight is the darkened gold (7A5F14), primaryDark is full gold.
+// Dark card elevation widened in 0.1.30: card #22314F + a 1 dp outlineDark #2A3A57 edge.
 
 val primaryLight = Color(0xFF7A5F14)
 val onPrimaryLight = Color(0xFFFFFFFF)
@@ -55,7 +56,7 @@ val tertiaryDark = Color(0xFFE0B478)
 val onTertiaryDark = Color(0xFF3C2A0D)
 val tertiaryContainerDark = Color(0xFF4A3720)
 val onTertiaryContainerDark = Color(0xFFF6E5CC)
-val errorDark = Color(0xFFF85149)
+val errorDark = Color(0xFFFF7469)
 val onErrorDark = Color(0xFF0B1220)
 val errorContainerDark = Color(0xFF5C1A16)
 val onErrorContainerDark = Color(0xFFFFDAD6)
@@ -63,7 +64,7 @@ val backgroundDark = Color(0xFF0B1220)
 val onBackgroundDark = Color(0xFFE6EDF7)
 val surfaceDark = Color(0xFF111A2B)
 val onSurfaceDark = Color(0xFFE6EDF7)
-val surfaceVariantDark = Color(0xFF1B2740)
+val surfaceVariantDark = Color(0xFF22314F)
 val onSurfaceVariantDark = Color(0xFFA9B6CC)
 val outlineDark = Color(0xFF2A3A57)
 val outlineVariantDark = Color(0xFF22304A)
@@ -76,5 +77,5 @@ val surfaceBrightDark = Color(0xFF24334D)
 val surfaceContainerLowestDark = Color(0xFF070D18)
 val surfaceContainerLowDark = Color(0xFF111A2B)
 val surfaceContainerDark = Color(0xFF162034)
-val surfaceContainerHighDark = Color(0xFF1B2740)
+val surfaceContainerHighDark = Color(0xFF22314F)
 val surfaceContainerHighestDark = Color(0xFF24334D)

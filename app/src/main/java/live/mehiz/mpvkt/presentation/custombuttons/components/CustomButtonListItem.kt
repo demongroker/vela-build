@@ -26,6 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import live.mehiz.mpvkt.R
 import live.mehiz.mpvkt.database.entities.CustomButtonEntity
+import live.mehiz.mpvkt.ui.theme.cardBorder
 import live.mehiz.mpvkt.ui.theme.spacing
 
 @Composable
@@ -43,6 +44,7 @@ fun CustomButtonListItem(
 ) {
   ElevatedCard(
     modifier = modifier,
+    border = cardBorder,
   ) {
     Row(
       modifier = Modifier

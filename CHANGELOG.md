@@ -2,6 +2,20 @@
 
 Newest first. Each entry describes one reviewable step.
 
+## 0.1.30
+
+### Changed — dark cards read as panels
+
+- **Card surface `#1B2740` → `#22314F`** (`surfaceVariantDark`, `surfaceContainerHighDark`) and
+  every card now carries a **1 dp `#2A3A57` edge** (`outlineDark`, exposed as
+  `MaterialTheme`-level `cardBorder`). The fill step alone was 1.26:1 against `#0B1220`;
+  at 1.44:1 plus a hairline the library, changelog and player panels no longer merge into one
+  dark mass on an AMOLED panel.
+- **Danger red `#F85149` → `#FF7469`.** The lighter card dropped refusal text to 3.87:1; it is
+  now 4.91:1. Measured, not assumed: body 11.00:1, muted 6.33:1, gold 6.16:1, success 5.10:1,
+  warning 5.13:1 on the new card.
+- Light mode unchanged: `primaryLight` stays the darkened gold `#7A5F14` (6.04:1 on white).
+
 ## 0.1.29
 
 ### Fixed — launch crash on 0.1.28
