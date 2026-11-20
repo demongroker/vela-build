@@ -8,6 +8,10 @@ room = "2.7.2"
 detekt = "1.23.8"
 about-libs = "12.2.4"
 navigation3 = "1.0.0-alpha06"
+# navigation3-ui 1.0.0-alpha06 is compiled against navigationevent-compose 1.0.0-alpha05.
+# material3 1.4.0 pulls a newer one, which removes the NavigationEventHandler overload
+# NavDisplay calls -> NoSuchMethodError on launch. Pin it.
+navigationevent = "1.0.0-alpha05"
 kotlinx-serialization = "1.13.0"
 
 [libraries]
@@ -27,6 +31,7 @@ androidx-preferences-ktx = { group = "androidx.preference", name = "preference-k
 mediasession = "androidx.media:media:1.8.0"
 androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "navigation3" }
 androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
+androidx-navigationevent-compose = { module = "androidx.navigationevent:navigationevent-compose", version.ref = "navigationevent" }
 androidx-documentfile = { group = "androidx.documentfile", name = "documentfile", version = "1.1.0" }
 
 mpv-lib = "io.github.abdallahmehiz:mpv-android-lib:0.1.9"

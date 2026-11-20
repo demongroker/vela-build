@@ -21,8 +21,8 @@ android {
     applicationId = "app.vela.player"
     minSdk = 23
     targetSdk = 36
-    versionCode = 365
-    versionName = "0.1.28"
+    versionCode = 366
+    versionName = "0.1.29"
 
     vectorDrawables {
       useSupportLibrary = true
@@ -138,8 +138,19 @@ room {
   schemaDirectory("$projectDir/schemas")
 }
 
+// navigation3-ui alpha06 calls NavigationEventHandler from navigationevent-compose alpha05.
+// A newer navigationevent (pulled transitively by material3 1.4.0) drops that overload and
+// crashes MainActivity on first composition. Force the matching version.
+configurations.all {
+  resolutionStrategy {
+    force("androidx.navigationevent:navigationevent-compose:1.0.0-alpha05")
+    force("androidx.navigationevent:navigationevent:1.0.0-alpha05")
+  }
+}
+
 dependencies {
   testImplementation("junit:junit:4.13.2")
+  implementation(libs.androidx.navigationevent.compose)
   implementation(libs.androidx.activity.compose)
   implementation(platform(libs.androidx.compose.bom))
   implementation(libs.androidx.ui)

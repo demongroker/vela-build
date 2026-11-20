@@ -13,4 +13,9 @@
     <files-path
         name="crash_log"
         path="crash.log" />
+    <!-- CrashActivity writes its shareable log to cacheDir/mpvKt_logs.txt; without
+         this entry FileProvider throws "Failed to find configured root". -->
+    <cache-path
+        name="crash_logs"
+        path="mpvKt_logs.txt" />
 </paths>

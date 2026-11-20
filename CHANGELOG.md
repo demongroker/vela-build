@@ -2,6 +2,21 @@
 
 Newest first. Each entry describes one reviewable step.
 
+## 0.1.29
+
+### Fixed — launch crash on 0.1.28
+
+- **`NoSuchMethodError: NavigationEventHandler` on first composition.** `navigation3-ui
+  1.0.0-alpha06` is compiled against `navigationevent-compose 1.0.0-alpha05`, but material3
+  1.4.0 pulled a newer navigationevent transitively, which no longer has that overload.
+  `NavDisplay` called it and the app died before the library appeared. The matching version is
+  now pinned in the catalogue **and forced** in `resolutionStrategy`, so no transitive upgrade
+  can win again.
+- **Crash reporter could not share its own log.** `CrashActivity` writes
+  `cacheDir/mpvKt_logs.txt`, but `provider_paths.xml` only exposed `files/crash.log`, so
+  `FileProvider.getUriForFile` threw "Failed to find configured root". Added a narrow
+  `cache-path` entry for that single file — the provider still exposes nothing else.
+
 ## 0.1.28
 
 ### Settings regroup + one-thumb player sheet
