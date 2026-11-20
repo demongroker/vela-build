@@ -2,6 +2,24 @@
 
 Newest first. Each entry describes one reviewable step.
 
+## 0.1.27
+
+### Navy + gold — the shared house style
+
+- **Palette ported** to the same navy + gold tokens as Hermes 0.1.4 and VideoDroid 2.6.0
+  (`ui/theme/Color.kt`, all 70 tokens; token names unchanged so `Theme.kt` needed no edit).
+  Dark: navy `#0B1220` base, `#111A2B` surface, `#1B2740` cards, gold `#D4AF37` accent.
+  Light: white surfaces with a **darkened gold** `#7A5F14` primary — full gold fails contrast
+  on white, so it is never used for text or icons there.
+- **Material You now defaults OFF.** It was on by default for Android 12+, which replaced the
+  app's colours with the wallpaper palette — so the new identity would not have been visible.
+  The toggle in Appearance still works, and anyone who already set it keeps their choice.
+
+### Not in this release
+
+The settings regroup (7 flat screens → 4 groups) and the one-thumb player sheet are the next
+slice; this release is the palette only.
+
 ## Unreleased
 
 Nothing yet.
