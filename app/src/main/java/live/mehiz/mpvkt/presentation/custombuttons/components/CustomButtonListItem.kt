@@ -1,5 +1,6 @@
 package live.mehiz.mpvkt.presentation.custombuttons.components
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -43,8 +44,9 @@ fun CustomButtonListItem(
   modifier: Modifier = Modifier,
 ) {
   ElevatedCard(
-    modifier = modifier,
-    border = cardBorder,
+    // ElevatedCard has no `border` parameter in this Material3 version; draw the same 1 dp
+    // edge with a modifier at the card's default (medium) shape instead.
+    modifier = modifier.border(cardBorder, MaterialTheme.shapes.medium),
   ) {
     Row(
       modifier = Modifier
